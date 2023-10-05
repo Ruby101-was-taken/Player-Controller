@@ -10,6 +10,7 @@ public class PlayerMovement : MonoBehaviour
     private Rigidbody2D rigidBody;
     private Animator anim;
     private bool grounded = true;
+    private bool ladder = true;
     private bool facingRight = true;
     // Start is called before the first frame update
     void Awake()
@@ -23,10 +24,20 @@ public class PlayerMovement : MonoBehaviour
     {
         float horizontalInput = Input.GetAxisRaw("Horizontal");
         rigidBody.velocity = new Vector2(horizontalInput * speed, rigidBody.velocity.y);
+        if ((horizontalInput > 0 && !facingRight) || (horizontalInput < 0 && facingRight))
+        {
+            Flip();
+        }
+        anim.SetBool("walk", horizontalInput != 0);
 
-        if (Input.GetKey(KeyCode.Space) && grounded)
+        if (Input.GetKey(KeyCode.Space) && (grounded || ladder))
         {
             Jump();
+        }
+
+        if(transform.position.y < -5)
+        {
+            transform.position = new Vector2(0, 0);
         }
     }
 
@@ -34,6 +45,8 @@ public class PlayerMovement : MonoBehaviour
     {
         rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpHeight);
         grounded = false;
+        ladder = false;
+        anim.SetTrigger("jump");
     }
 
     private void OnCollisionEnter2D(Collision2D other)
@@ -43,5 +56,21 @@ public class PlayerMovement : MonoBehaviour
             Debug.Log("Grounded");
             grounded = true;
         }
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("Ground"))
+        {
+            Debug.Log("ladder");
+            ladder = true;
+        }
+    }
+
+    private void Flip()
+    {
+        Vector3 currentScale = gameObject.transform.localScale;
+        currentScale.x *= -1;
+        gameObject.transform.localScale = currentScale;
+        facingRight = !facingRight;
     }
 }
